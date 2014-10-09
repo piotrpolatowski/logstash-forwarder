@@ -144,13 +144,7 @@ func main() {
 		configureSyslog()
 	}
 
-	restart := &ProspectorResume{}
-	restart.persist = make(chan *FileState)
-
-	// Load the previous log file locations now, for use in prospector
-	restart.files = make(map[string]*FileState)
-	
-	loadState(&restart.files)
+	restart := loadState()
 
 	pendingProspectorCnt := 0
 
@@ -189,7 +183,12 @@ func main() {
 	Registrar(persist, registrar_chan)
 }
 
-func loadState(v interface{}) {
+func loadState() *ProspectorResume {
+	restart := &ProspectorResume{}
+	restart.persist = make(chan *FileState)
+
+	// Load the previous log file locations now, for use in prospector
+	restart.files = make(map[string]*FileState)    
 	if existing, e := os.Open(".logstash-forwarder"); e == nil {
 		defer existing.Close() 
 		wd := ""
@@ -199,8 +198,9 @@ func loadState(v interface{}) {
 		emit("Loading registrar data from %s/.logstash-forwarder\n", wd)
 
 		decoder := json.NewDecoder(existing)
-		decoder.Decode(v)		
-	}    
+		decoder.Decode(&restart.files)	
+	}
+	return restart
 }
 
 // REVU: yes, this is a temp hack.
