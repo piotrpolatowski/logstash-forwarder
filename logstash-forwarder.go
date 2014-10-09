@@ -149,17 +149,8 @@ func main() {
 
 	// Load the previous log file locations now, for use in prospector
 	restart.files = make(map[string]*FileState)
-	if existing, e := os.Open(".logstash-forwarder"); e == nil {
-		defer existing.Close()
-		wd := ""
-		if wd, e = os.Getwd(); e != nil {
-			emit("WARNING: os.Getwd retuned unexpected error %s -- ignoring\n", e.Error())
-		}
-		emit("Loading registrar data from %s/.logstash-forwarder\n", wd)
-
-		decoder := json.NewDecoder(existing)
-		decoder.Decode(&restart.files)
-	}
+	
+	loadState(&restart.files)
 
 	pendingProspectorCnt := 0
 
@@ -196,6 +187,20 @@ func main() {
 
 	// registrar records last acknowledged positions in all files.
 	Registrar(persist, registrar_chan)
+}
+
+func loadState(v interface{}) {
+	if existing, e := os.Open(".logstash-forwarder"); e == nil {
+		defer existing.Close() 
+		wd := ""
+		if wd, e = os.Getwd(); e != nil {
+			emit("WARNING: os.Getwd retuned unexpected error %s -- ignoring\n", e.Error())
+		}
+		emit("Loading registrar data from %s/.logstash-forwarder\n", wd)
+
+		decoder := json.NewDecoder(existing)
+		decoder.Decode(v)		
+	}    
 }
 
 // REVU: yes, this is a temp hack.
