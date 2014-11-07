@@ -18,8 +18,7 @@ var exitStat = struct {
 }
 
 var options = &struct {
-	configFile          string
-	propertiesFile		string
+	fwHome          string
 	spoolSize           uint64
 	harvesterBufferSize int
 	cpuProfileFile      string
@@ -36,8 +35,7 @@ var options = &struct {
 
 func emitOptions() {
 	emit("\t--- options -------\n")
-	emit("\tconfig-file:         %s\n", options.configFile)
-	emit("\tproperties-file:         %s\n", options.propertiesFile)
+	emit("\tfw-home:         %s\n", options.fwHome)
 	emit("\tidle-timeout:        %v\n", options.idleTimeout)
 	emit("\tspool-size:          %d\n", options.spoolSize)
 	emit("\tharvester-buff-size: %d\n", options.harvesterBufferSize)
@@ -55,8 +53,8 @@ func emitOptions() {
 
 // exits with stat existStat.usageError if required options are not provided
 func assertRequiredOptions() {
-	if options.configFile == "" {
-		exit(exitStat.usageError, "fatal: config file must be defined")
+	if options.fwHome == "" {
+		exit(exitStat.usageError, "fatal: fwHome must be defined")
 	}
 }
 
@@ -65,9 +63,7 @@ const logflags = log.Ldate | log.Ltime | log.Lmicroseconds
 var infolog *log.Logger
 
 func init() {
-	flag.StringVar(&options.configFile, "config", options.configFile, "path to logstash-forwarder configuration file")
-	flag.StringVar(&options.propertiesFile, "properties", options.propertiesFile, "path to logstash-forwarder properties file")
-	
+	flag.StringVar(&options.fwHome, "fwHome", options.fwHome, "path to findwise configuration directory")	
 
 	flag.StringVar(&options.cpuProfileFile, "cpuprofile", options.cpuProfileFile, "path to cpu profile output - note: exits on profile end.")
 
@@ -121,7 +117,7 @@ func main() {
 		}()
 	}
 
-	config, e := LoadConfig(options.configFile, options.propertiesFile)
+	config, e := LoadConfig(options.fwHome)
 	if e != nil {
 		fault("on LoadConfig: %s\n", e.Error())
 	}

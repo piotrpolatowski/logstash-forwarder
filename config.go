@@ -68,8 +68,8 @@ func LoadProperties(properties_path string, config_in []byte) (config_out []byte
 	return
 }
 
-func LoadConfig(path string, properties_path string) (config Config, err error) {
-	config_file, err := os.Open(path)
+func LoadConfig(path string) (config Config, err error) {
+	config_file, err := os.Open(path+"/logstash-forwarder/config.json")
 	if err != nil {
 		emit("Failed to open config file '%s': %s\n", path, err)
 		return
@@ -85,7 +85,7 @@ func LoadConfig(path string, properties_path string) (config Config, err error) 
 	_, err = config_file.Read(buffer)
 	
 	// replacing properties
-	buffer, err = LoadProperties(properties_path, buffer)
+	buffer, err = LoadProperties(path+"/findwise.properties", buffer)
 		
 	err = json.Unmarshal(buffer, &config)
 	if err != nil {
