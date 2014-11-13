@@ -39,7 +39,7 @@ type FileConfig struct {
 	deadtime time.Duration
 }
 
-func LoadProperties(properties_path string, config_in []byte) (config_out []byte, err error) {
+func LoadProperties(fwHome string, properties_path string, config_in []byte) (config_out []byte, err error) {
 	if(properties_path == "") {
 		config_out = config_in
 		return
@@ -54,6 +54,9 @@ func LoadProperties(properties_path string, config_in []byte) (config_out []byte
 	defer inputFile.Close()
 	scanner := bufio.NewScanner(inputFile)
 
+	emit("Trying to replace property: fwHome with value: " + fwHome)
+	config_str = strings.Replace(config_str, "${fw.home}", fwHome, -1)
+	
 	for scanner.Scan() {
 		prop := strings.Split(scanner.Text(), "=")
 		emit("Trying to replace property: " + prop[0] + " with value: " + prop[1])
@@ -68,16 +71,16 @@ func LoadProperties(properties_path string, config_in []byte) (config_out []byte
 	return
 }
 
-func LoadConfig(path string) (config Config, err error) {
-	config_file, err := os.Open(path+"/logstash-forwarder/config.json")
+func LoadConfig(fwHome string) (config Config, err error) {
+	config_file, err := os.Open(fwHome+"/logstash-forwarder/config.json")
 	if err != nil {
-		emit("Failed to open config file '%s': %s\n", path, err)
+		emit("Failed to open config file '%s': %s\n", fwHome, err)
 		return
 	}
 
 	fi, _ := config_file.Stat()
 	if size := fi.Size(); size > (configFileSizeLimit) {
-		emit("config file (%q) size exceeds reasonable limit (%d) - aborting", path, size)
+		emit("config file (%q) size exceeds reasonable limit (%d) - aborting", fwHome, size)
 		return // REVU: shouldn't this return an error, then?
 	}
 
@@ -85,7 +88,7 @@ func LoadConfig(path string) (config Config, err error) {
 	_, err = config_file.Read(buffer)
 	
 	// replacing properties
-	buffer, err = LoadProperties(path+"/findwise.properties", buffer)
+	buffer, err = LoadProperties(fwHome, fwHome+"/findwise.properties", buffer)
 		
 	err = json.Unmarshal(buffer, &config)
 	if err != nil {
